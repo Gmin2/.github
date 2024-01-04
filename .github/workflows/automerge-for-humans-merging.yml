@@ -33,51 +33,7 @@ jobs:
         run: npm install node-fetch @octokit/core @octokit/plugin-paginate-rest
 
       - name: Merge PR with Co-Authors
-
-        run: |
-          run: |
-          const fetch = require('node-fetch');
-          const { Octokit } = require('@octokit/rest');
-          const { paginateRest } = require('@octokit/plugin-paginate-rest');
-
-          const token = process.env.GITHUB_TOKEN;
-          const prNumber = process.env.PR_NUMBER;
-          const prTitle = process.env.PR_TITLE;
-          const repostory = process.env.GITHUB_REPOSITORY;
-
-          async function getCoAuthors() {
-            try {
-              const octokit = new Octokit({ auth: token });
-              const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
-                owner: "asyncapi",
-                repo: repostory,
-                pull_number: prNumber,
-                per_page: 100,
-              });
-
-              const coAuthors = commitsResponse
-                .map(commit => ({
-                  name: commit.commit.author.name,
-                  email: commit.commit.author.email,
-                  login: commit.author.login,
-                }))
-                .filter(author => author.login !== 'main_author_login') // Replace 'main_author_login' with the main author's login
-                .reduce((uniqueAuthors, author) => {
-                  if (!uniqueAuthors.some(a => a.email === author.email)) {
-                    uniqueAuthors.push(author);
-                  }
-                  return uniqueAuthors;
-                }, [])
-                .map(author => `Co-authored-by: ${author.name} <${author.email}>`)
-                .join('\n');
-
-              return coAuthors;
-            } catch (error) {
-              console.error('Error fetching commits:', error);
-              return null;
-            }
-          }
-
+        run: node index.js
       - name: Automerge PR
         uses: pascalgn/automerge-action@22948e0bc22f0aa673800da838595a3e7347e584 #v0.15.6 https://github.com/pascalgn/automerge-action/releases/tag/v0.15.6
         env:
