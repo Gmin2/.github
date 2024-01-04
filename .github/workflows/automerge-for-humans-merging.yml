@@ -21,31 +21,70 @@ jobs:
     if: github.event.pull_request.draft == false && (github.event.pull_request.user.login != 'asyncapi-bot' || github.event.pull_request.user.login != 'dependabot[bot]' || github.event.pull_request.user.login != 'dependabot-preview[bot]') #it runs only if PR actor is not a bot, at least not a bot that we know
     runs-on: ubuntu-latest
     steps:
-      - name: Get list of authors
-        uses: sergeysova/jq-action@v2
-        id: authors
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
         with:
-          # This cmd does following (line by line):
-          # 1. CURL querying the list of commits of the current PR via GH API. Why? Because the current event payload does not carry info about the commits.
-          # 2. Iterates over the previous returned payload, and creates an array with the filtered results (see below) so we can work wit it later. An example of payload can be found in https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#webhook-payload-example-34.
-          # 3. Grabs the data we need for adding the `Co-authored-by: ...` lines later and puts it into objects to be used later on.
-          # 4. Filters the results by excluding the current PR sender. We don't need to add it as co-author since is the PR creator and it will become by default the main author.
-          # 5. Removes repeated authors (authors can have more than one commit in the PR).
-          # 6. Builds the `Co-authored-by: ...` lines with actual info.
-          # 7. Transforms the array into plain text. Thanks to this, the actual stdout of this step can be used by the next Workflow step (wich is basically the automerge).
-          cmd: | 
-            curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" "${{github.event.pull_request._links.commits.href}}?per_page=100" | 
-              jq -r '[.[] 
-                | {name: .commit.author.name, email: .commit.author.email, login: .author.login}] 
-                | map(select(.login != "${{github.event.pull_request.user.login}}")) 
-                | unique 
-                | map("Co-authored-by: " + .name + " <" + .email + ">") 
-                | join("\n")'
-          multiline: true
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install node-fetch @octokit/core @octokit/plugin-paginate-rest
+
+      - name: Merge PR with Co-Authors
+
+        run: |
+          run: |
+          const fetch = require('node-fetch');
+          const { Octokit } = require('@octokit/rest');
+          const { paginateRest } = require('@octokit/plugin-paginate-rest');
+
+          const token = process.env.GITHUB_TOKEN;
+          const prNumber = process.env.PR_NUMBER;
+          const prTitle = process.env.PR_TITLE;
+          const repostory = process.env.GITHUB_REPOSITORY;
+
+          async function getCoAuthors() {
+            try {
+              const octokit = new Octokit({ auth: token });
+              const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
+                owner: "asyncapi",
+                repo: repostory,
+                pull_number: prNumber,
+                per_page: 100,
+              });
+
+              const coAuthors = commitsResponse
+                .map(commit => ({
+                  name: commit.commit.author.name,
+                  email: commit.commit.author.email,
+                  login: commit.author.login,
+                }))
+                .filter(author => author.login !== 'main_author_login') // Replace 'main_author_login' with the main author's login
+                .reduce((uniqueAuthors, author) => {
+                  if (!uniqueAuthors.some(a => a.email === author.email)) {
+                    uniqueAuthors.push(author);
+                  }
+                  return uniqueAuthors;
+                }, [])
+                .map(author => `Co-authored-by: ${author.name} <${author.email}>`)
+                .join('\n');
+
+              return coAuthors;
+            } catch (error) {
+              console.error('Error fetching commits:', error);
+              return null;
+            }
+          }
+
       - name: Automerge PR
         uses: pascalgn/automerge-action@22948e0bc22f0aa673800da838595a3e7347e584 #v0.15.6 https://github.com/pascalgn/automerge-action/releases/tag/v0.15.6
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
+          PR_NUMBER: ${{ github.event.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
           # Using the output of the previous step (`Co-authored-by: ...` lines) as commit description.
