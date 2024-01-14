@@ -42,11 +42,12 @@ jobs:
           script: |
             const { Octokit } = require('@octokit/rest');
             const { paginateRest } = require('@octokit/plugin-paginate-rest');
+
             const fetch = require('cross-fetch');
 
             const token = process.env.GITHUB_TOKEN;
-            const prNumber = ${{ github.event.number }};
-            const repository = ${{ github.repository }}
+            const prNumber = process.env.PR_NUMBER;
+            const repository = process.env.GITHUB_REPOSITORY;
 
             async function getCoAuthors() {
               try {
@@ -58,9 +59,9 @@ jobs:
                 });
                   
                 const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
-                  owner: "${{ github.repository_owner }}",
-                  repo: repository.split('/')[1],
-                  pull_number: prNumber,
+                  owner: "asyncapi",
+                  repo: repository,
+                  pull_number: ${{ github.event.number }},
                   per_page: 100,
                 });
                   
@@ -88,11 +89,14 @@ jobs:
             }
           
             await getCoAuthors();
+            - name: Automerge PR
+              uses: pascalgn/automerge-action@v0.15.6
             
-      - name: Automerge PR
-        uses: pascalgn/automerge-action@v0.15.6
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
+          PR_NUMBER: ${{ github.event.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
           # Using the output of the previous step (`Co-authored-by: ...` lines) as commit description.
