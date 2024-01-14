@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'  # Use a supported Node.js version
+          node-version: '18'
 
       - name: Install dependencies
         run: npm install @octokit/core @octokit/plugin-paginate-rest @octokit/rest node-fetch
@@ -53,8 +53,8 @@ jobs:
                   
                 const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
                   owner: "asyncapi",
-                  repo: repository,
-                  pull_number: prNumber,
+                  repo: "parser-js",
+                  pull_number: 526,
                   per_page: 100,
                 });
                   
