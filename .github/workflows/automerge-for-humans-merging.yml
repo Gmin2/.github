@@ -42,7 +42,6 @@ jobs:
           script: |
             const { Octokit } = require('@octokit/rest');
             const { paginateRest } = require('@octokit/plugin-paginate-rest');
-
             const fetch = require('cross-fetch');
 
             const token = process.env.GITHUB_TOKEN;
@@ -89,14 +88,11 @@ jobs:
             }
           
             await getCoAuthors();
-            - name: Automerge PR
-              uses: pascalgn/automerge-action@v0.15.6
             
+      - name: Automerge PR
+        uses: pascalgn/automerge-action@v0.15.6
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
-          PR_NUMBER: ${{ github.event.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
           # Using the output of the previous step (`Co-authored-by: ...` lines) as commit description.
