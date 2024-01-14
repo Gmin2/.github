@@ -41,7 +41,6 @@ jobs:
             const token = process.env.GITHUB_TOKEN;
             const prNumber = process.env.PR_NUMBER;
             const repository = process.env.GITHUB_REPOSITORY;
-            const pull_number = process.env.PR_NUMBER;
 
             async function getCoAuthors() {
               try {
