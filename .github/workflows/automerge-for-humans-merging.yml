@@ -1,9 +1,16 @@
 name: Automerge For Humans
 
 on:
-  push:
-    branches:
-      - test
+  pull_request_target:
+    types:
+      - labeled
+      - unlabeled
+      - synchronize
+      - opened
+      - edited
+      - ready_for_review
+      - reopened
+      - unlocked
 
 jobs:
   automerge-for-humans:
@@ -53,8 +60,8 @@ jobs:
                   
                 const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
                   owner: "asyncapi",
-                  repo: "parser-js",
-                  pull_number: 526,
+                  repo: repository,
+                  pull_number: prNumber,
                   per_page: 100,
                 });
                   
@@ -82,6 +89,8 @@ jobs:
             }
           
             await getCoAuthors();
+            - name: Automerge PR
+              uses: pascalgn/automerge-action@v0.15.6
             
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
@@ -90,6 +99,8 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
+          # Using the output of the previous step (`Co-authored-by: ...` lines) as commit description.
+          # Important to keep 2 empty lines as https://docs.github.com/en/pull-requests/committing-changes-to-your-project/creating-and-editing-commits/creating-a-commit-with-multiple-authors#creating-co-authored-commits-on-the-command-line mentions
           MERGE_COMMIT_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.number }})\n\n\n${{ steps.authors.outputs.value }}"
           MERGE_RETRIES: "20"
           MERGE_RETRY_SLEEP: "30000"
