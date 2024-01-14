@@ -75,7 +75,6 @@ jobs:
             }
 
             await getCoAuthors();
-            echo "::set-output name=value::${authors}"
             
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
