@@ -59,8 +59,8 @@ jobs:
                 });
                   
                 const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
-                  owner: "asyncapi",
-                  repo: repository,
+                  owner: repository.split('/')[0],
+                  repo: repository.split('/')[1],
                   pull_number: ${{ github.event.number }},
                   per_page: 100,
                 });
@@ -93,7 +93,7 @@ jobs:
               uses: pascalgn/automerge-action@v0.15.6
             
         env:
-          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           PR_NUMBER: ${{ github.event.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           GITHUB_REPOSITORY: ${{ github.repository }}
