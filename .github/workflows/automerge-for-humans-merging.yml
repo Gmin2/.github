@@ -36,7 +36,7 @@ jobs:
             const { Octokit } = require('@octokit/rest');
             const { paginateRest } = require('@octokit/plugin-paginate-rest');
 
-            const fetch = require('node-fetch');
+            const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
             const token = process.env.GITHUB_TOKEN;
             const prNumber = process.env.PR_NUMBER;
