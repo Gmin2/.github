@@ -25,14 +25,13 @@ jobs:
           node-version: '14'  # Use a supported Node.js version
 
       - name: Install dependencies
-        run: npm install 
-        working-directory: ./.github/workflows/scripts/mailchimp
+        run: npm install @octokit/core @octokit/plugin-paginate-rest
 
       - name: Get List of authors
         id: authors
         uses: actions/github-script@v5
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { Octokit } = require('@octokit/rest');
             const { paginateRest } = require('@octokit/plugin-paginate-rest');
@@ -74,12 +73,8 @@ jobs:
               }
             }
 
-            // Execute the function and set the output
-            const authorsOutput = await getCoAuthors();
-            return { value: authorsOutput };
-
-      - name: Automerge PR
-        uses: pascalgn/automerge-action@22948e0bc22f0aa673800da838595a3e7347e584 #v0.15.6 https://github.com/pascalgn/automerge-action/releases/tag/v0.15.6
+            getCoAuthors();
+            
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
           PR_NUMBER: ${{ github.event.number }}
