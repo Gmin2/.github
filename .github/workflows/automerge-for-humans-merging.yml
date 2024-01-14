@@ -89,18 +89,13 @@ jobs:
             }
           
             await getCoAuthors();
-            - name: Automerge PR
-              uses: pascalgn/automerge-action@v0.15.6
-            
+
+      - name: Automerge PR
+        uses: pascalgn/automerge-action@v0.15.6
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          PR_NUMBER: ${{ github.event.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
-          # Using the output of the previous step (`Co-authored-by: ...` lines) as commit description.
-          # Important to keep 2 empty lines as https://docs.github.com/en/pull-requests/committing-changes-to-your-project/creating-and-editing-commits/creating-a-commit-with-multiple-authors#creating-co-authored-commits-on-the-command-line mentions
           MERGE_COMMIT_MESSAGE: "${{ github.event.pull_request.title }} (#${{ github.event.number }})\n\n\n${{ steps.authors.outputs.value }}"
           MERGE_RETRIES: "20"
           MERGE_RETRY_SLEEP: "30000"
