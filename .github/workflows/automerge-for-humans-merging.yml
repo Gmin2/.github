@@ -36,7 +36,11 @@ jobs:
             const { Octokit } = require('@octokit/rest');
             const { paginateRest } = require('@octokit/plugin-paginate-rest');
 
-            const fetch = require('node-fetch');
+            cconst fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+            const token = process.env.GITHUB_TOKEN;
+            const prNumber = process.env.PR_NUMBER;
+            const repository = process.env.GITHUB_REPOSITORY;
 
             const token = process.env.GITHUB_TOKEN;
             const prNumber = process.env.PR_NUMBER;
@@ -44,14 +48,20 @@ jobs:
 
             async function getCoAuthors() {
               try {
-                const octokit = new Octokit({ auth: token });
+                const octokit = new Octokit({
+                  auth: token,
+                  request: {
+                    fetch,
+                  },
+                });
+                  
                 const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
                   owner: "asyncapi",
                   repo: repository,
                   pull_number: prNumber,
                   per_page: 100,
                 });
-
+                  
                 const authors = commitsResponse
                   .map(data => ({
                     name: data.commit.author.name,
@@ -75,7 +85,7 @@ jobs:
                 return null;
               }
             }
-
+          
             await getCoAuthors();
             
         env:
