@@ -58,7 +58,7 @@ jobs:
                 });
                   
                 const commitsResponse = await octokit.paginate("GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", {
-                  owner: "asyncapi",
+                  owner: "${{ github.repository_owner }}",
                   repo: repository,
                   pull_number: prNumber,
                   per_page: 100,
@@ -92,7 +92,7 @@ jobs:
       - name: Automerge PR
         uses: pascalgn/automerge-action@v0.15.6
         env:
-          GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MERGE_LABELS: "!do-not-merge,ready-to-merge"
           MERGE_METHOD: "squash"
           # Using the output of the previous step (`Co-authored-by: ...` lines) as commit description.
