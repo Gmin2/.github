@@ -74,7 +74,7 @@ jobs:
                   .map(author => `Co-authored-by: ${author.name} <${author.email}>`)
                   .join('\n');
                 console.log(authors);
-                console.log(`::set-output name=authors::${authors}`);
+                console.log(`::save-state name=authors::${authors}`);
                 return authors;
               } catch (error) {
                 console.error('Error fetching commits:', error);
